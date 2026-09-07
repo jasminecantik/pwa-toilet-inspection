@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Toilet Inspection PWA</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  
+  <!-- Tailwind CSS & FontAwesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- External Libraries (Offline Capable) -->
+  <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-100 font-sans pb-10">
+
+  <!-- HEADER & INDIKATOR KONEKSI -->
+  <header class="bg-blue-600 text-white p-4 sticky top-0 z-50 shadow-md flex justify-between items-center">
+    <div>
+      <h1 class="font-bold text-lg leading-tight">TOILET INSPECTION</h1>
+      <p id="pending-badge" class="text-xs text-yellow-300 font-semibold mt-1">💾 Tersimpan offline: 0 data</p>
+    </div>
+    <div id="connection-status" class="px-3 py-1 rounded-full text-xs font-bold bg-green-500 text-white flex items-center gap-1">
+      <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+      <span id="status-text">ONLINE</span>
+    </div>
+  </header>
+
+  <main class="p-4 max-w-md mx-auto space-y-4">
+
+    <!-- 1. SCANNER & LOKASI -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+      <button id="btn-scan" onclick="startScanner()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow flex items-center justify-center gap-2 text-base active:scale-95 transition">
+        <i class="fa-solid fa-qrcode text-xl"></i> [ 📷 SCAN BARCODE ]
+      </button>
+
+      <div id="reader" class="mt-3 hidden rounded-lg overflow-hidden border"></div>
+
+      <!-- Hasil Scan -->
+      <div id="location-info" class="mt-4 p-3 bg-gray-50 rounded-lg border text-sm space-y-1 hidden">
+        <div class="flex justify-between">
+          <span class="text-gray-500">Lantai:</span>
+          <span id="txt-lantai" class="font-bold text-gray-800">-</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Jenis Toilet:</span>
+          <span id="txt-jenis" class="font-bold font-semibold text-blue-600">-</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. NAMA PETUGAS -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Petugas <span class="text-red-500">*</span></label>
+      <input type="text" id="input-petugas" placeholder="Masukkan nama Anda..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+    </div>
+
+    <!-- 3. FORM CHECKLIST (Dinamis) -->
+    <div id="form-checklist" class="space-y-4 hidden">
+      
+      <!-- A. KONDISI KEBERSIHAN -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+        <h2 class="font-bold text-gray-800 border-b pb-2 mb-3 text-sm flex items-center gap-2">
+          <i class="fa-solid fa-broom text-blue-500"></i> A. Kebersihan
+        </h2>
+        <div class="space-y-3" id="group-kebersihan"></div>
+      </div>
+
+      <!-- B. TOILET & SUPPLIES -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+        <h2 class="font-bold text-gray-800 border-b pb-2 mb-3 text-sm flex items-center gap-2">
+          <i class="fa-solid fa-soap text-blue-500"></i> B. Fasilitas & Supplies
+        </h2>
+        <div class="space-y-3" id="group-supplies"></div>
+      </div>
+
+      <!-- SCORE SIMULASI -->
+      <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center">
+        <span class="text-xs font-semibold text-blue-600 uppercase tracking-wider">Inspection Score</span>
+        <div id="score-display" class="text-3xl font-extrabold text-blue-700 my-1">100%</div>
+        <div id="status-display" class="inline-block px-3 py-1 text-xs font-bold rounded-full bg-green-100 text-green-700">GOOD</div>
+      </div>
+
+      <!-- TOMBOL AKSI -->
+      <div class="pt-2 space-y-2">
+        <button onclick="handleSaveOffline()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 text-base active:scale-95 transition">
+          <i class="fa-solid fa-floppy-disk"></i> [ 💾 SIMPAN ]
+        </button>
+
+        <button onclick="handleSyncData()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 text-base active:scale-95 transition">
+          <i class="fa-solid fa-cloud-arrow-up"></i> [ ☁️ SUBMIT / SYNC ]
+        </button>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- LOGIKA SCRIPT APLIKASI -->
+  <script>
+ 
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxwexiG1YYGV1_dYwwlSvwngN9XsAGbKyyGfY8Iu4bXzdTYdc8OzeD9BJO8pehTLVOc/exec";
+
+    // Setup Dexie IndexedDB
+    const db = new Dexie("ToiletInspectionDB");
+    db.version(1).stores({
+      inspections: "inspection_id, inspection_time, sync_status"
+    });
+
+    let scannedData = null;
+    let html5QrcodeScanner = null;
+    let evidenceBase64 = "";
+
+    // Register Service Worker untuk PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Error:', err));
+    }
+
+    // Cek Status Koneksi Online/Offline
+    window.addEventListener('online', updateConnectionStatus);
+    window.addEventListener('offline', updateConnectionStatus);
+
+    function updateConnectionStatus() {
+      const statusBox = document.getElementById('connection-status');
+      const statusText = document.getElementById('status-text');
+      
+      if (navigator.onLine) {
+        statusBox.className = "px-3 py-1 rounded-full text-xs font-bold bg-green-500 text-white flex items-center gap-1";
+        statusText.innerText = "ONLINE";
+      } else {
+        statusBox.className = "px-3 py-1 rounded-full text-xs font-bold bg-red-500 text-white flex items-center gap-1";
+        statusText.innerText = "OFFLINE";
+      }
+    }
+
+    // Pemindai Barcode (OF1-L08-W -> L08 | WANITA)
+    function startScanner() {
+      document.getElementById('reader').classList.remove('hidden');
+      html5QrcodeScanner = new Html5Qrcode("reader");
+      
+      html5QrcodeScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        (decodedText) => {
+          processBarcode(decodedText);
+          html5QrcodeScanner.stop();
+          document.getElementById('reader').classList.add('hidden');
+        },
+        (errorMessage) => {}
+      );
+    }
+
+    function processBarcode(code) {
+      // Format contoh: OF1-L08-W atau OF1-L08-M atau OF1-L08-V
+      const parts = code.split("-");
+      if (parts.length === 3) {
+        const lantai = parts[1];
+        const kodeJenis = parts[2];
+        
+        let jenis = "";
+        if (kodeJenis === "M") jenis = "PRIA";
+        else if (kodeJenis === "W") jenis = "WANITA";
+        else if (kodeJenis === "V") jenis = "VIP";
+
+        if (jenis !== "") {
+          scannedData = { lantai, jenis_toilet: jenis };
+          document.getElementById('txt-lantai').innerText = lantai;
+          document.getElementById('txt-jenis').innerText = jenis;
+          document.getElementById('location-info').classList.remove('hidden');
+          document.getElementById('form-checklist').classList.remove('hidden');
+          renderChecklist();
+          return;
+        }
+      }
+      Swal.fire("Error", "❌ Barcode tidak terdaftar", "error");
+    }
+
+    // Checklist Items Demo
+    const masterChecklist = [
+      { id: "C001", cat: "Kebersihan", item: "Bau Ruangan", options: ["Normal", "Sedikit Berbau", "Bau Menyengat"], bobot: 1 },
+      { id: "C002", cat: "Kebersihan", item: "Lantai", options: ["Bersih", "Cukup Bersih", "Kotor"], bobot: 1 },
+      { id: "C003", cat: "Supplies", item: "Hand Soap", options: ["Tersedia", "Hampir Habis", "Habis"], bobot: 1 },
+      { id: "C004", cat: "Supplies", item: "Tissue", options: ["Tersedia", "Hampir Habis", "Habis"], bobot: 1 }
+    ];
+
+    function renderChecklist() {
+      const gKebersihan = document.getElementById('group-kebersihan');
+      const gSupplies = document.getElementById('group-supplies');
+      gKebersihan.innerHTML = "";
+      gSupplies.innerHTML = "";
+
+      masterChecklist.forEach((c) => {
+        const html = `
+          <div class="border-b pb-2">
+            <label class="block text-xs font-semibold text-gray-600 mb-1">${c.item}</label>
+            <select id="select-${c.id}" onchange="checkIssueState('${c.id}')" class="w-full p-2 border rounded-md text-sm bg-white">
+              <option value="">-- Pilih Condition --</option>
+              ${c.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+            </select>
+
+            <!-- Container Input Issue (Catatan + Foto) -->
+            <div id="issue-box-${c.id}" class="mt-2 p-2 bg-red-50 border border-red-200 rounded-md hidden space-y-2">
+              <input type="text" id="note-${c.id}" placeholder="Wajib isi catatan masalah..." class="w-full p-2 border rounded text-xs">
+              <div>
+                <label class="block text-[10px] font-bold text-red-600 mb-1">📷 Wajib Ambil Foto Evidence:</label>
+                <input type="file" accept="image/*" capture="environment" onchange="handlePhotoUpload(event)" class="text-xs">
+              </div>
+            </div>
+          </div>
+        `;
+
+        if (c.cat === "Kebersihan") gKebersihan.innerHTML += html;
+        else gSupplies.innerHTML += html;
+      });
+    }
+
+    function checkIssueState(id) {
+      const val = document.getElementById(`select-${id}`).value;
+      const issueBox = document.getElementById(`issue-box-${id}`);
+      
+      // Jika memilih kondisi bermasalah
+      if (val === "Kotor" || val === "Bau Menyengat" || val === "Habis") {
+        issueBox.classList.remove('hidden');
+      } else {
+        issueBox.classList.add('hidden');
+      }
+      calculateScore();
+    }
+
+    // Hitung Score Otomatis
+    function calculateScore() {
+      let totalItems = 0;
+      let totalScore = 0;
+
+      masterChecklist.forEach(c => {
+        const val = document.getElementById(`select-${c.id}`).value;
+        if (val !== "") {
+          totalItems++;
+          if (val === "Bersih" || val === "Normal" || val === "Tersedia") totalScore += 100;
+          else if (val === "Cukup Bersih" || val === "Sedikit Berbau" || val === "Hampir Habis") totalScore += 50;
+          else totalScore += 0;
+        }
+      });
+
+      const finalScore = totalItems > 0 ? Math.round(totalScore / masterChecklist.length) : 100;
+      document.getElementById('score-display').innerText = finalScore + "%";
+      
+      const statusEl = document.getElementById('status-display');
+      if (finalScore >= 90) { statusEl.innerText = "GOOD"; statusEl.className = "inline-block px-3 py-1 text-xs font-bold rounded-full bg-green-100 text-green-700"; }
+      else if (finalScore >= 75) { statusEl.innerText = "FAIR"; statusEl.className = "inline-block px-3 py-1 text-xs font-bold rounded-full bg-yellow-100 text-yellow-700"; }
+      else { statusEl.innerText = "POOR"; statusEl.className = "inline-block px-3 py-1 text-xs font-bold rounded-full bg-red-100 text-red-700"; }
+    }
+
+    // Kompresi Foto
+    async function handlePhotoUpload(event) {
+      const imageFile = event.target.files[0];
+      if (!imageFile) return;
+
+      const options = { maxSizeMB: 0.3, maxWidthOrHeight: 1024, useWebWorker: true };
+      try {
+        const compressedFile = await imageCompression(imageFile, options);
+        const reader = new FileReader();
+        reader.readAsDataURL(compressedFile);
+        reader.onloadend = () => { evidenceBase64 = reader.result; };
+      } catch (error) { console.log(error); }
+    }
+
+    // SIMPAN OFFLINE (IndexedDB)
+    async function handleSaveOffline() {
+      const namaPetugas = document.getElementById('input-petugas').value.trim();
+      if (!namaPetugas) return Swal.fire("Peringatan", "Nama Petugas wajib diisi!", "warning");
+      if (!scannedData) return Swal.fire("Peringatan", "Scan barcode lokasi dulu!", "warning");
+
+      // Validasi Mandatory Checklist
+      let unselected = 0;
+      let details = [];
+      let hasIssueMissingData = false;
+
+      masterChecklist.forEach(c => {
+        const val = document.getElementById(`select-${c.id}`).value;
+        if (!val) unselected++;
+        
+        const isIssue = (val === "Kotor" || val === "Bau Menyengat" || val === "Habis");
+        const note = document.getElementById(`note-${c.id}`) ? document.getElementById(`note-${c.id}`).value : "";
+
+        if (isIssue && (!note || !evidenceBase64)) {
+          hasIssueMissingData = true;
+        }
+
+        details.push({
+          checklist_id: c.id,
+          item_name: c.item,
+          hasil: val,
+          score: (val === "Bersih" || val === "Normal" || val === "Tersedia") ? 100 : (val === "Habis" || val === "Kotor" ? 0 : 50),
+          catatan: note,
+          is_issue: isIssue
+        });
+      });
+
+      if (unselected > 0) return Swal.fire("Peringatan", `⚠️ Masih ada ${unselected} checklist yang belum diisi.`, "warning");
+      if (hasIssueMissingData) return Swal.fire("Peringatan", "Temuan masalah wajib menyertakan Catatan & Foto Evidence!", "warning");
+
+      // Buat Unique Transaction ID
+      const uuid = "INS-" + new Date().toISOString().replace(/[-:T.]/g, "").substring(0, 8) + "-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+      const inspectionTime = new Date().toLocaleString('sv-SE');
+
+      const payload = {
+        inspection_id: uuid,
+        inspection_time: inspectionTime,
+        nama_petugas: namaPetugas,
+        lantai: scannedData.lantai,
+        jenis_toilet: scannedData.jenis_toilet,
+        score: parseInt(document.getElementById('score-display').innerText),
+        status: document.getElementById('status-display').innerText,
+        details: details,
+        evidence_base64: evidenceBase64,
+        sync_status: "PENDING"
+      };
+
+      await db.inspections.add(payload);
+      Swal.fire("Berhasil", "✅ Data berhasil disimpan secara offline!", "success");
+      updatePendingBadge();
+    }
+
+    // SUBMIT / SYNC KE GOOGLE APPS SCRIPT
+    async function handleSyncData() {
+      if (!navigator.onLine) return Swal.fire("Offline", "Koneksi internet tidak tersedia!", "error");
+
+      const pendingData = await db.inspections.where("sync_status").equals("PENDING").toArray();
+      if (pendingData.length === 0) return Swal.fire("Info", "Tidak ada data yang perlu disinkronkan.", "info");
+
+      Swal.fire({ title: "Sinkronisasi...", text: `Mengirim ${pendingData.length} data...`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+      let successCount = 0;
+      for (let item of pendingData) {
+        try {
+          const res = await fetch(GAS_API_URL, {
+            method: "POST",
+            body: JSON.stringify(item)
+          });
+          const result = await res.json();
+
+          if (result.status === "SUCCESS") {
+            await db.inspections.update(item.inspection_id, { sync_status: "SYNCED" });
+            successCount++;
+          }
+        } catch (e) { console.error(e); }
+      }
+
+      Swal.fire("Selesai", `✅ ${successCount} dari ${pendingData.length} data berhasil disinkronkan!`, "success");
+      updatePendingBadge();
+    }
+
+    async function updatePendingBadge() {
+      const count = await db.inspections.where("sync_status").equals("PENDING").count();
+      document.getElementById('pending-badge').innerText = `💾 Tersimpan offline: ${count} data`;
+    }
+
+    // Init awal
+    updateConnectionStatus();
+    updatePendingBadge();
+  </script>
+</body>
+</html>
