@@ -1,6 +1,37 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+  <style>
+    /* Latar Belakang Utama PWA */
+body {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  font-family: 'Inter', sans-serif;
+  color: #1e293b;
+}
+/* Kartu Efek Kaca (Glassmorphism) */
+.glass-card {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(15, 118, 110, 0.08);
+}
+
+/* Tombol dengan Efek Satin & Kilau */
+.btn-satin {
+  background: linear-gradient(135deg, #00a884 0%, #0f766e 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 4px 12px rgba(0, 168, 132, 0.3);
+  transition: all 0.3s ease;
+}
+
+.btn-satin:active {
+  transform: scale(0.98);
+}
+  </style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Toilet Inspection PWA</title>
