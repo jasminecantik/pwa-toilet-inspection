@@ -1,60 +1,68 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <style>
-    /* Latar Belakang Utama PWA */
-body {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  font-family: 'Inter', sans-serif;
-  color: #1e293b;
-}
-/* Kartu Efek Kaca (Glassmorphism) */
-.glass-card {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px 0 rgba(15, 118, 110, 0.08);
-}
-
-/* Tombol dengan Efek Satin & Kilau */
-.btn-satin {
-  background: linear-gradient(135deg, #00a884 0%, #0f766e 100%);
-  color: #ffffff;
-  border: none;
-  border-radius: 12px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 4px 12px rgba(0, 168, 132, 0.3);
-  transition: all 0.3s ease;
-}
-
-.btn-satin:active {
-  transform: scale(0.98);
-}
-  </style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Toilet Inspection PWA</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#2563eb">
+  <meta name="theme-color" content="#0f766e">
   
   <!-- Tailwind CSS & FontAwesome -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <!-- External Libraries (Offline Capable) -->
   <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    /* Latar Belakang Utama PWA */
+    body {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+      font-family: 'Inter', sans-serif;
+      color: #1e293b;
+      min-height: 100vh;
+    }
+
+    /* Kartu Efek Kaca (Glassmorphism) */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.65) !important;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.8) !important;
+      border-radius: 16px !important;
+      box-shadow: 0 8px 32px 0 rgba(15, 118, 110, 0.08) !important;
+    }
+
+    /* Tombol dengan Efek Satin & Kilau */
+    .btn-satin {
+      background: linear-gradient(135deg, #00a884 0%, #0f766e 100%) !important;
+      color: #ffffff !important;
+      border: none !important;
+      border-radius: 12px !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 4px 12px rgba(0, 168, 132, 0.3) !important;
+      transition: all 0.3s ease !important;
+    }
+
+    .btn-satin:active {
+      transform: scale(0.98) !important;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 font-sans pb-10">
+<body class="pb-10">
 
   <!-- HEADER & INDIKATOR KONEKSI -->
-  <header class="bg-blue-600 text-white p-4 sticky top-0 z-50 shadow-md flex justify-between items-center">
+  <header class="glass-card sticky top-0 z-50 p-4 m-2 flex justify-between items-center border-b">
     <div>
-      <h1 class="font-bold text-lg leading-tight">TOILET INSPECTION</h1>
-      <p id="pending-badge" class="text-xs text-yellow-300 font-semibold mt-1">💾 Tersimpan offline: 0 data</p>
+      <h1 class="font-bold text-lg leading-tight text-teal-950">TOILET INSPECTION</h1>
+      <p id="pending-badge" class="text-xs text-amber-700 font-semibold mt-1">💾 Tersimpan offline: 0 data</p>
     </div>
     <div id="connection-status" class="px-3 py-1 rounded-full text-xs font-bold bg-green-500 text-white flex items-center gap-1">
       <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
@@ -65,65 +73,65 @@ body {
   <main class="p-4 max-w-md mx-auto space-y-4">
 
     <!-- 1. SCANNER & LOKASI -->
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-      <button id="btn-scan" onclick="startScanner()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow flex items-center justify-center gap-2 text-base active:scale-95 transition">
+    <div class="glass-card p-4">
+      <button id="btn-scan" onclick="startScanner()" class="btn-satin w-full font-bold py-3 text-base flex items-center justify-center gap-2">
         <i class="fa-solid fa-qrcode text-xl"></i> [ 📷 SCAN BARCODE ]
       </button>
 
       <div id="reader" class="mt-3 hidden rounded-lg overflow-hidden border"></div>
 
       <!-- Hasil Scan -->
-      <div id="location-info" class="mt-4 p-3 bg-gray-50 rounded-lg border text-sm space-y-1 hidden">
+      <div id="location-info" class="mt-4 p-3 bg-white/50 rounded-lg border text-sm space-y-1 hidden">
         <div class="flex justify-between">
           <span class="text-gray-500">Lantai:</span>
           <span id="txt-lantai" class="font-bold text-gray-800">-</span>
         </div>
         <div class="flex justify-between">
           <span class="text-gray-500">Jenis Toilet:</span>
-          <span id="txt-jenis" class="font-bold font-semibold text-blue-600">-</span>
+          <span id="txt-jenis" class="font-bold font-semibold text-teal-700">-</span>
         </div>
       </div>
     </div>
 
     <!-- 2. NAMA PETUGAS -->
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+    <div class="glass-card p-4">
       <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Petugas <span class="text-red-500">*</span></label>
-      <input type="text" id="input-petugas" placeholder="Masukkan nama Anda..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+      <input type="text" id="input-petugas" placeholder="Masukkan nama Anda..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm bg-white/70">
     </div>
 
     <!-- 3. FORM CHECKLIST (Dinamis) -->
     <div id="form-checklist" class="space-y-4 hidden">
       
       <!-- A. KONDISI KEBERSIHAN -->
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+      <div class="glass-card p-4">
         <h2 class="font-bold text-gray-800 border-b pb-2 mb-3 text-sm flex items-center gap-2">
-          <i class="fa-solid fa-broom text-blue-500"></i> A. Kebersihan
+          <i class="fa-solid fa-broom text-teal-600"></i> A. Kebersihan
         </h2>
         <div class="space-y-3" id="group-kebersihan"></div>
       </div>
 
       <!-- B. TOILET & SUPPLIES -->
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+      <div class="glass-card p-4">
         <h2 class="font-bold text-gray-800 border-b pb-2 mb-3 text-sm flex items-center gap-2">
-          <i class="fa-solid fa-soap text-blue-500"></i> B. Fasilitas & Supplies
+          <i class="fa-solid fa-soap text-teal-600"></i> B. Fasilitas & Supplies
         </h2>
         <div class="space-y-3" id="group-supplies"></div>
       </div>
 
       <!-- SCORE SIMULASI -->
-      <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center">
-        <span class="text-xs font-semibold text-blue-600 uppercase tracking-wider">Inspection Score</span>
-        <div id="score-display" class="text-3xl font-extrabold text-blue-700 my-1">100%</div>
+      <div class="glass-card p-4 text-center">
+        <span class="text-xs font-semibold text-teal-800 uppercase tracking-wider">Inspection Score</span>
+        <div id="score-display" class="text-3xl font-extrabold text-teal-700 my-1">100%</div>
         <div id="status-display" class="inline-block px-3 py-1 text-xs font-bold rounded-full bg-green-100 text-green-700">GOOD</div>
       </div>
 
       <!-- TOMBOL AKSI -->
       <div class="pt-2 space-y-2">
-        <button onclick="handleSaveOffline()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 text-base active:scale-95 transition">
+        <button onclick="handleSaveOffline()" class="btn-satin w-full font-bold py-3.5 text-base flex items-center justify-center gap-2">
           <i class="fa-solid fa-floppy-disk"></i> [ 💾 SIMPAN ]
         </button>
 
-        <button onclick="handleSyncData()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 text-base active:scale-95 transition">
+        <button onclick="handleSyncData()" class="btn-satin w-full font-bold py-3.5 text-base flex items-center justify-center gap-2" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;">
           <i class="fa-solid fa-cloud-arrow-up"></i> [ ☁️ SUBMIT / SYNC ]
         </button>
       </div>
@@ -134,7 +142,6 @@ body {
 
   <!-- LOGIKA SCRIPT APLIKASI -->
   <script>
- 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxwexiG1YYGV1_dYwwlSvwngN9XsAGbKyyGfY8Iu4bXzdTYdc8OzeD9BJO8pehTLVOc/exec";
 
     // Setup Dexie IndexedDB
@@ -187,7 +194,6 @@ body {
     }
 
     function processBarcode(code) {
-      // Format contoh: OF1-L08-W atau OF1-L08-M atau OF1-L08-V
       const parts = code.split("-");
       if (parts.length === 3) {
         const lantai = parts[1];
@@ -229,14 +235,14 @@ body {
         const html = `
           <div class="border-b pb-2">
             <label class="block text-xs font-semibold text-gray-600 mb-1">${c.item}</label>
-            <select id="select-${c.id}" onchange="checkIssueState('${c.id}')" class="w-full p-2 border rounded-md text-sm bg-white">
+            <select id="select-${c.id}" onchange="checkIssueState('${c.id}')" class="w-full p-2 border rounded-md text-sm bg-white/80">
               <option value="">-- Pilih Condition --</option>
               ${c.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
             </select>
 
             <!-- Container Input Issue (Catatan + Foto) -->
-            <div id="issue-box-${c.id}" class="mt-2 p-2 bg-red-50 border border-red-200 rounded-md hidden space-y-2">
-              <input type="text" id="note-${c.id}" placeholder="Wajib isi catatan masalah..." class="w-full p-2 border rounded text-xs">
+            <div id="issue-box-${c.id}" class="mt-2 p-2 bg-red-50/80 border border-red-200 rounded-md hidden space-y-2">
+              <input type="text" id="note-${c.id}" placeholder="Wajib isi catatan masalah..." class="w-full p-2 border rounded text-xs bg-white">
               <div>
                 <label class="block text-[10px] font-bold text-red-600 mb-1">📷 Wajib Ambil Foto Evidence:</label>
                 <input type="file" accept="image/*" capture="environment" onchange="handlePhotoUpload(event)" class="text-xs">
@@ -254,7 +260,6 @@ body {
       const val = document.getElementById(`select-${id}`).value;
       const issueBox = document.getElementById(`issue-box-${id}`);
       
-      // Jika memilih kondisi bermasalah
       if (val === "Kotor" || val === "Bau Menyengat" || val === "Habis") {
         issueBox.classList.remove('hidden');
       } else {
@@ -307,7 +312,6 @@ body {
       if (!namaPetugas) return Swal.fire("Peringatan", "Nama Petugas wajib diisi!", "warning");
       if (!scannedData) return Swal.fire("Peringatan", "Scan barcode lokasi dulu!", "warning");
 
-      // Validasi Mandatory Checklist
       let unselected = 0;
       let details = [];
       let hasIssueMissingData = false;
@@ -336,7 +340,6 @@ body {
       if (unselected > 0) return Swal.fire("Peringatan", `⚠️ Masih ada ${unselected} checklist yang belum diisi.`, "warning");
       if (hasIssueMissingData) return Swal.fire("Peringatan", "Temuan masalah wajib menyertakan Catatan & Foto Evidence!", "warning");
 
-      // Buat Unique Transaction ID
       const uuid = "INS-" + new Date().toISOString().replace(/[-:T.]/g, "").substring(0, 8) + "-" + Math.random().toString(36).substring(2, 8).toUpperCase();
       const inspectionTime = new Date().toLocaleString('sv-SE');
 
