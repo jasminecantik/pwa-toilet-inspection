@@ -179,7 +179,7 @@
 
   <!-- LOGIKA SCRIPT APLIKASI -->
   <script>
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxwexiG1YYGV1_dYwwlSvwngN9XsAGbKyyGfY8Iu4bXzdTYdc8OzeD9BJO8pehTLVOc/exec";
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxZhGx78kjHfwXXlMdUVykLD-K1jyuij0YoL8DEYsNLB40GuFLXPCA0KQOAOiXFHg_t/exec";
 
     // Setup Dexie IndexedDB
     const db = new Dexie("ToiletInspectionDB");
@@ -329,20 +329,30 @@
       else { statusEl.innerText = "POOR"; statusEl.className = "inline-block px-3 py-1 text-xs font-bold rounded-full bg-red-100 text-red-700"; }
     }
 
-    // Kompresi Foto
-    async function handlePhotoUpload(event) {
-      const imageFile = event.target.files[0];
-      if (!imageFile) return;
+   // Kompresi Foto agar Sangat Ringan (Aman untuk Apps Script)
+async function handlePhotoUpload(event) {
+  const imageFile = event.target.files[0];
+  if (!imageFile) return;
 
-      const options = { maxSizeMB: 0.3, maxWidthOrHeight: 1024, useWebWorker: true };
-      try {
-        const compressedFile = await imageCompression(imageFile, options);
-        const reader = new FileReader();
-        reader.readAsDataURL(compressedFile);
-        reader.onloadend = () => { evidenceBase64 = reader.result; };
-      } catch (error) { console.log(error); }
-    }
-
+  // Set kompresi lebih agresif (maxSizeMB: 0.1) agar sync sangat cepat dan anti-gagal
+  const options = { 
+    maxSizeMB: 0.1, 
+    maxWidthOrHeight: 600, 
+    useWebWorker: true 
+  };
+  
+  try {
+    const compressedFile = await imageCompression(imageFile, options);
+    const reader = new FileReader();
+    reader.readAsDataURL(compressedFile);
+    reader.onloadend = () => { 
+      evidenceBase64 = reader.result; 
+      console.log("Foto berhasil dikompresi");
+    };
+  } catch (error) { 
+    console.error("Gagal kompresi foto:", error); 
+  }
+}
     // SIMPAN OFFLINE (IndexedDB)
     async function handleSaveOffline() {
       const namaPetugas = document.getElementById('input-petugas').value.trim();
